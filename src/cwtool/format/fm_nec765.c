@@ -57,6 +57,21 @@
 
 
 /****************************************************************************
+ * fm_nec765_track_number
+ ****************************************************************************/
+static int
+fm_nec765_track_number(
+	struct fm_nec765		*fm_nec,
+	int				track)
+
+	{
+	if (fm_nec->rw.track_step == 1) return (track);
+	return ((track / fm_nec->rw.track_step) + (track % 2));
+	}
+
+
+
+/****************************************************************************
  * fm_nec765_sector_shift
  ****************************************************************************/
 static int
@@ -170,6 +185,7 @@ fm_nec765_read_sector(
 	/* accept only valid sector numbers */
 
 	sector = header[2] - 1;
+	track  = fm_nec765_track_number(fm_nec, track);
 	if ((sector < 0) || (sector >= fm_nec->rw.sectors))
 		{
 		verbose(1, "sector %d out of range", sector);
@@ -229,8 +245,8 @@ fm_nec765_write_sector(
 	int				data_size;
 
 	verbose(1, "writing sector %d", sector);
-	header[0] = track / 2;
-	header[1] = track % 2;
+	header[0] = fm_nec765_track_number(fm_nec, track) / 2;
+	header[1] = fm_nec765_track_number(fm_nec, track) % 2;
 	header[2] = sector + 1;
 	header[3] = fm_nec765_sector_shift(fm_nec, sector);
 	data_size = fm_nec765_sector_size(fm_nec, sector);
@@ -252,8 +268,8 @@ fm_nec765_statistics(
 	int				track)
 
 	{
-	histogram_normal(ffo_l0, track, track);
-	if (fmt->fm_nec.rd.flags & FLAG_RD_POSTCOMP_SIMPLE) histogram_postcomp_simple(ffo_l0, fmt->fm_nec.rw.bnd, 2, track, track);
+	histogram_normal(ffo_l0, track, fm_nec765_track_number(&fmt->fm_nec, track));
+	if (fmt->fm_nec.rd.flags & FLAG_RD_POSTCOMP_SIMPLE) histogram_postcomp_simple(ffo_l0, fmt->fm_nec.rw.bnd, 2, track, fm_nec765_track_number(&fmt->fm_nec, track));
 	return (1);
 	}
 
@@ -392,9 +408,10 @@ fm_nec765_write_track(
 #define MAGIC_CRC16_INIT_VALUE1		30
 #define MAGIC_CRC16_INIT_VALUE2		31
 #define MAGIC_CRC16_INIT_VALUE3		32
-#define MAGIC_SECTOR_SIZES		33
-#define MAGIC_BOUNDS_OLD		34
-#define MAGIC_BOUNDS_NEW		35
+#define MAGIC_TRACK_STEP		33
+#define MAGIC_SECTOR_SIZES		34
+#define MAGIC_BOUNDS_OLD		35
+#define MAGIC_BOUNDS_NEW		36
 
 
 
@@ -467,6 +484,7 @@ fm_nec765_set_defaults(
 			.crc16_init_value2  = 0,
 			.crc16_init_value3  = 0,
 			.flags              = 0,
+			.track_step         = 1,
 			.bnd                =
 				{
 				BOUNDS_NEW(0x0800, 0x1a52, 0x2a00, 0),
@@ -621,6 +639,7 @@ fm_nec765_set_rw_option(
 			&fmt->fm_nec.rw.crc16_init_value3));
 		return (setvalue_ushort(&fmt->fm_nec.rw.crc16_init_value3, val, 0, 0xffff));
 		}
+	if (magic == MAGIC_TRACK_STEP)         return (setvalue_uchar(&fmt->fm_nec.rw.track_step, val, 1, 2));
 	if (magic == MAGIC_SECTOR_SIZES) return (fm_set_sector_size(fmt->fm_nec.rw.pshift, ofs, GLOBAL_NR_SECTORS, val));
 	if (magic == MAGIC_BOUNDS_OLD)   return (setvalue_bounds_old(fmt->fm_nec.rw.bnd, val, ofs));
 	debug_error_condition(magic != MAGIC_BOUNDS_NEW);
@@ -759,6 +778,7 @@ static struct format_option		fm_nec765_rw_options[] =
 	FORMAT_OPTION_INTEGER("crc16_init_value1", MAGIC_CRC16_INIT_VALUE1,  1),
 	FORMAT_OPTION_INTEGER("crc16_init_value2", MAGIC_CRC16_INIT_VALUE2,  1),
 	FORMAT_OPTION_INTEGER("crc16_init_value3", MAGIC_CRC16_INIT_VALUE3,  1),
+	FORMAT_OPTION_INTEGER("track_step",        MAGIC_TRACK_STEP,         1),
 	FORMAT_OPTION_INTEGER("sector_sizes",      MAGIC_SECTOR_SIZES,      -1),
 	FORMAT_OPTION_INTEGER("bounds",            MAGIC_BOUNDS_OLD,         6),	/* compat */
 	FORMAT_OPTION_INTEGER("bounds_old",        MAGIC_BOUNDS_OLD,         6),

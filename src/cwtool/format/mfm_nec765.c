@@ -124,7 +124,8 @@ mfm_nec765_read_sector2(
 		if (mfm_read_bytes(ffo_l1, dsk_err, header, HEADER_SIZE) == -1) return (-1);
 		range_set_end(range_sector_header(rng_sec), fifo_get_rd_bitofs(ffo_l1));
 		fifo_set_rd_bitofs(ffo_l1, bitofs);
-		if (format_compare2("id_address_mark: got 0x%02x, expected 0x%02x", header[0], mfm_nec->rw.id_address_mark) == 0) break;
+		//if (format_compare2("id_address_mark: got 0x%02x, expected 0x%02x", header[0], mfm_nec->rw.id_address_mark) == 0) break;
+		if (header[0] == mfm_nec->rw.id_address_mark) break;
 		}
 	data_size = mfm_nec765_sector_size(mfm_nec, header[3] - 1);
 	if (mfm_read_sync(ffo_l1, range_sector_data(rng_sec), mfm_nec->rw.sync_value, mfm_nec->rw.sync_length) == -1) return (-1);
@@ -203,18 +204,18 @@ mfm_nec765_read_sector(
 
 	result = format_compare2("header crc16 checksum: got 0x%04x, expected 0x%04x", mfm_read_u16_be(&header[5]), mfm_crc16(mfm_nec->rw.crc16_init_value, header, 5));
 	result += format_compare2("data crc16 checksum: got 0x%04x, expected 0x%04x", mfm_read_u16_be(&data[data_size + 1]), mfm_crc16(mfm_nec->rw.crc16_init_value, data, data_size + 1));
-	if (result > 0) verbose(2, "checksum error on sector %d", sector);
+	if (result > 0) verbose(1, "checksum error on sector %d", sector);
 	if (mfm_nec->rd.flags & FLAG_RD_IGNORE_CHECKSUMS) disk_warning_add(&dsk_err, result);
 	else disk_error_add(&dsk_err, DISK_ERROR_FLAG_CHECKSUM, result);
 
 	result = format_compare2("track: got %d, expected %d", header[1], track / 2);
 	result += format_compare2("side: got %d, expected %d", header[2], track % 2);
-	if (result > 0) verbose(2, "track or side mismatch on sector %d", sector);
+	if (result > 0) verbose(1, "track or side mismatch on sector %d", sector);
 	if (mfm_nec->rd.flags & FLAG_RD_IGNORE_TRACK_MISMATCH) disk_warning_add(&dsk_err, result);
 	else disk_error_add(&dsk_err, DISK_ERROR_FLAG_NUMBERING, result);
 
 	result = format_compare3("data_address_mark: got 0x%02x, expected 0x%02x or 0x%02x", data[0], mfm_nec->rw.data_address_mark1, mfm_nec->rw.data_address_mark2);
-	if (result > 0) verbose(2, "wrong data_address_mark on sector %d", sector);
+	if (result > 0) verbose(1, "wrong data_address_mark on sector %d", sector);
 	if (mfm_nec->rd.flags & FLAG_RD_IGNORE_FORMAT_BYTE) disk_warning_add(&dsk_err, result);
 	else disk_error_add(&dsk_err, DISK_ERROR_FLAG_ID, result);
 

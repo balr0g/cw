@@ -82,7 +82,7 @@ format_compare2(
 	unsigned long			val2)
 
 	{
-	verbose(3, string, val1, val2);
+	  if (val1 != val2) verbose(0, string, val1, val2);
 	return ((val1 != val2) ? 1 : 0);
 	}
 
@@ -99,7 +99,7 @@ format_compare3(
 	unsigned long			val3)
 
 	{
-	verbose(3, string, val1, val2, val3);
+	  if ((val1 != val2)&&(val1 != val3)) verbose(0, string, val1, val2, val3);
 	return (((val1 != val2) && (val1 != val3)) ? 1 : 0);
 	}
 /******************************************************** Karsten Scheibler */

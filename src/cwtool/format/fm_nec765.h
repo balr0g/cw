@@ -57,7 +57,8 @@ struct fm_nec765
 		unsigned short		crc16_init_value1;
 		unsigned short		crc16_init_value2;
 		unsigned short		crc16_init_value3;
-		unsigned short		reserved;
+	        unsigned char		reserved;//was short
+		unsigned char		track_step;
 		unsigned char		pshift[(GLOBAL_NR_SECTORS + 1) / 2];
 		struct bounds		bnd[2];
 		}			rw;
