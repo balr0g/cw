@@ -22,7 +22,9 @@
 #include <stdlib.h>
 #endif /* !__KERNEL__ */
 
+#ifndef CW_STANDALONE
 #include <linux/types.h>
+#endif
 
 /* basic types */
 
